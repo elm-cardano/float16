@@ -11,7 +11,9 @@ import Test exposing (Test, describe, test)
 suite : Test
 suite =
     describe "Bytes.Floating.Decode"
-        [ hex [ 0x22, 0x55 ]
+        [ hex [ 0x00, 0x00 ]
+            |> expect (float16 BE) (Just 0.0)
+        , hex [ 0x22, 0x55 ]
             |> expect (float16 LE) (Just 82.125)
         , hex [ 0x4A, 0x30 ]
             |> expect (float16 BE) (Just 12.375)
