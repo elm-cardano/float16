@@ -119,7 +119,7 @@ encode f =
             -- Quantize to 10 bits: m = round((mantissa - 1.0) * 1024)
             let
                 m =
-                    round ((mantissa - 1.0) * 1024.0)
+                    roundEven ((mantissa - 1.0) * 1024.0)
             in
             if m >= 1024 then
                 -- Rounding pushed mantissa to 2.0 (e.g. 1.9995 * 1024 rounds to 1024).
@@ -138,7 +138,7 @@ encode f =
             -- No implicit leading 1. Solve for m: m = round(af * 2^24)
             let
                 m =
-                    round (af * pow2 24)
+                    roundEven (af * pow2 24)
             in
             if m >= 1024 then
                 -- Rounds up to the smallest normal number (biased exponent = 1)
@@ -150,6 +150,44 @@ encode f =
         else
             -- Too small to represent even as subnormal → ±0
             sign
+
+
+{-| Round a non-negative Float to the nearest Int, with ties going to even
+(IEEE 754 roundTiesToEven / banker's rounding).
+
+At exact midpoints (fractional part = 0.5), the result is rounded to the
+nearest even integer. Away from midpoints, behaves like normal rounding.
+
+    roundEven 0.5 == 0  -- tie: 0 is even, keep it
+    roundEven 1.5 == 2  -- tie: 1 is odd, round up
+    roundEven 2.5 == 2  -- tie: 2 is even, keep it
+    roundEven 0.7 == 1  -- not a tie, round to nearest
+
+See <https://en.wikipedia.org/wiki/IEEE_754#Rounding_rules>
+
+-}
+roundEven : Float -> Int
+roundEven x =
+    let
+        n =
+            floor x
+
+        frac =
+            x - toFloat n
+    in
+    if frac > 0.5 then
+        n + 1
+
+    else if frac < 0.5 then
+        n
+
+    else
+        -- Exact midpoint: round to even
+        if modBy 2 n == 0 then
+            n
+
+        else
+            n + 1
 
 
 {-| Decompose a positive float into (mantissa, exponent) where
