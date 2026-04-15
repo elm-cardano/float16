@@ -1,6 +1,7 @@
-module Bytes.Floating.Current exposing (decode, encode)
+module Bytes.Floating.Old exposing (decode, encode, float16Decode, float16Encode)
 
-{-| Copy of the current float16 implementation for benchmarking.
+{-| Copy of the old float16 implementation (bit-reinterpretation approach)
+for benchmarking against the new pure-arithmetic implementation.
 -}
 
 import Bitwise exposing (and, or, shiftLeftBy, shiftRightBy)
@@ -9,11 +10,29 @@ import Bytes.Decode as D
 import Bytes.Encode as E
 
 
+{-| Full encode: Float -> Bytes (matches the public API signature).
+-}
+float16Encode : Endianness -> Float -> E.Encoder
+float16Encode endian =
+    toUnsignedInt32 >> floatToHalf >> E.unsignedInt16 endian
+
+
+{-| Full decode: Bytes -> Float (matches the public API signature).
+-}
+float16Decode : Endianness -> D.Decoder Float
+float16Decode endian =
+    D.unsignedInt16 endian |> D.map (halfToFloat >> fromUnsignedInt32)
+
+
+{-| Internal encode: Float -> Int (for unit-level benchmarking).
+-}
 encode : Float -> Int
 encode =
     toUnsignedInt32 >> floatToHalf
 
 
+{-| Internal decode: Int -> Float (for unit-level benchmarking).
+-}
 decode : Int -> Float
 decode =
     halfToFloat >> fromUnsignedInt32

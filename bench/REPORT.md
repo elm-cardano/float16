@@ -7,6 +7,10 @@ encoding and decoding in pure Elm. Each variant uses a fundamentally different
 strategy. All implementations are tested against the original `elm-toulouse/float16`
 encoder/decoder as the reference baseline.
 
+**Outcome:** The **PureArithmetic** variant was selected as the new default
+implementation for the package, replacing the old bit-reinterpretation approach.
+It is 58% faster for full encode and 83% faster for full decode.
+
 ### Reproducing the results
 
 ```sh
@@ -31,12 +35,92 @@ All 236 tests pass. This includes:
 - 4 x 3 = 12 IEEE 754 midpoint rounding tests
 
 
+## Benchmark Results
+
+### Internal conversion (Float <-> Int)
+
+Single value: 12.375
+
+```
+elm-bench -f Bench.old_encode -f Bench.pureArithmetic_encode "()"
+elm-bench -f Bench.old_decode -f Bench.pureArithmetic_decode "()"
+```
+
+**Encode (Float -> Int):**
+
+| Variant | Time | vs Old |
+|---|---|---|
+| Old (bit-reinterpretation) | 206 ns | baseline |
+| EncodeByDecode (binary search) | 100 ns | 52% faster |
+| SuccessiveBit (ADC-style) | 51 ns | 75% faster |
+| **PureArithmetic (frexp)** | **6 ns** | **97% faster** |
+| ScaleFloor (scale-and-round) | 6 ns | 97% faster |
+| Float64 (64-bit bit-reinterpret) | 279 ns | 35% slower |
+| LookupTable (Array tables) | 244 ns | 18% slower |
+
+**Decode (Int -> Float):**
+
+| Variant | Time | vs Old |
+|---|---|---|
+| Old (bit-reinterpretation) | 202 ns | baseline |
+| EncodeByDecode | 6 ns | 97% faster |
+| **PureArithmetic** | **6 ns** | **97% faster** |
+| SuccessiveBit | 6 ns | 97% faster |
+| ScaleFloor | 6 ns | 97% faster |
+| Float64 | 242 ns | 20% slower |
+| LookupTable | 204 ns | 1% slower |
+
+### Full pipeline (Float <-> Bytes)
+
+Measures the complete public API including Bytes I/O.
+
+```
+elm-bench -f Bench.old_full_encode -f Bench.new_full_encode "()"
+elm-bench -f Bench.old_full_decode -f Bench.new_full_decode "()"
+```
+
+| Operation | Old | New (PureArithmetic) | Improvement |
+|---|---|---|---|
+| Encode (Float -> Bytes) | 325 ns | 135 ns | **58% faster** |
+| Decode (Bytes -> Float) | 229 ns | 38 ns | **83% faster** |
+
+### Key insight
+
+The bottleneck is `Bytes` allocation. The old implementation needed a
+`Bytes.Encode.float32 >> Bytes.Encode.encode >> Bytes.Decode.decode` roundtrip
+just to extract the float's raw bits (~200 ns). The pure arithmetic approaches
+skip this entirely, computing the uint16 via multiplication, comparison, and
+`round` -- no intermediate `Bytes` objects.
+
+The LookupTable approach is a net loss despite replacing branching with table
+lookups, because Elm's `Array` is an RRB-tree (not a flat array), making
+`Array.get` O(log n) with `Maybe` unwrapping overhead.
+
+### PureArithmetic vs ScaleFloor
+
+These two were the fastest and produce identical results. A batch benchmark
+over 15 diverse values (spanning zero, subnormals, normals of various magnitudes,
+overflow) showed them within noise of each other:
+
+```
+elm-bench -f Bench.pureArithmetic_encode_batch -f Bench.scaleFloor_encode_batch "()"
+```
+
+| Variant | Batch time | Difference |
+|---|---|---|
+| PureArithmetic | 352 ns | baseline |
+| ScaleFloor | 368 ns | 5% slower |
+
+PureArithmetic was selected for its more recognizable `frexp` decomposition
+(mirrors C's `frexp` function).
+
+
 ## Implementations
 
-### 1. Current (`Bytes.Floating.Current`)
+### 1. Old (`Bytes.Floating.Old`)
 
-**Strategy:** Exact copy of the original `Bytes.Floating.Encode` and
-`Bytes.Floating.Decode` modules, combined into a single module.
+**Strategy:** The original `elm-toulouse/float16` implementation (v1.x).
+Uses float32 bit-reinterpretation to extract IEEE 754 fields.
 
 **Encode pipeline:**
 ```
@@ -60,7 +144,7 @@ unsignedInt16 -> bit-shift to float32 -> unsignedInt32 encode -> float32 decode 
 The inverse: maps 16-bit sign/exponent/mantissa to 32-bit equivalents, then
 reinterprets the 32-bit integer as a Float via the reverse bytes trick.
 
-**Source:** `bench/src/Bytes/Floating/Current.elm`
+**Source:** `bench/src/Bytes/Floating/Old.elm`
 
 
 ### 2. EncodeByDecode (`Bytes.Floating.EncodeByDecode`)
@@ -100,11 +184,14 @@ are handled via explicit checks.
 **Source:** `bench/src/Bytes/Floating/EncodeByDecode.elm`
 
 
-### 3. PureArithmetic (`Bytes.Floating.PureArithmetic`)
+### 3. PureArithmetic (`Bytes.Floating.PureArithmetic`) -- SELECTED
 
 **Strategy:** Decompose the float using a `frexp`-style loop (repeated
 halving/doubling), then quantize the mantissa to 10 bits. No bit
 reinterpretation at any stage.
+
+**This is the implementation now used by the main package** (`src/Bytes/Floating/Encode.elm`
+and `src/Bytes/Floating/Decode.elm`).
 
 **Encode pipeline:**
 ```
@@ -127,7 +214,7 @@ Subnormals are handled separately: `m = round(|f| * 2^24)`.
 
 ### 4. Float64 (`Bytes.Floating.Float64`)
 
-**Strategy:** Same bit-reinterpretation trick as Current, but using the 64-bit
+**Strategy:** Same bit-reinterpretation trick as Old, but using the 64-bit
 float representation instead of 32-bit. Since Elm's `Float` is natively a
 float64, this avoids the intermediate float32 precision loss.
 
@@ -244,7 +331,7 @@ entries, the tree is 2 levels deep. This means the "branchless" table approach
 still involves tree traversal and Maybe unwrapping per lookup -- the performance
 characteristics differ significantly from C/C++ lookup tables.
 
-**Decode pipeline:** Same bit-reinterpretation approach as Current (tables are
+**Decode pipeline:** Same bit-reinterpretation approach as Old (tables are
 not beneficial for decoding).
 
 **Source:** `bench/src/Bytes/Floating/LookupTable.elm`
@@ -259,7 +346,7 @@ Test values: 0, -0, 1, 1.5, -0.25, 0.375, 1.001, 0.99951, 12.375, 82.125,
 
 | Variant | Pass | Fail | Notes |
 |---|---|---|---|
-| Current | 17/17 | 0 | Exact copy of reference |
+| Old | 17/17 | 0 | Original implementation |
 | EncodeByDecode | 17/17 | 0 | Search finds correct values |
 | PureArithmetic | 17/17 | 0 | `round()` matches guard-bit rounding |
 | Float64 | 17/17 | 0 | Same guard-bit logic via 64-bit path |
@@ -281,7 +368,7 @@ normal), 0x3BFF (0.9995), 0x3C00 (1.0), 0x3C01 (1.001), 0x3E00 (1.5),
 
 | Variant | Pass | Fail | Notes |
 |---|---|---|---|
-| Current | 14/14 | 0 | Bit reinterpretation via float32 |
+| Old | 14/14 | 0 | Bit reinterpretation via float32 |
 | EncodeByDecode | 14/14 | 0 | Pure arithmetic decode |
 | PureArithmetic | 14/14 | 0 | Pure arithmetic decode |
 | Float64 | 14/14 | 0 | Bit reinterpretation via float64 |
@@ -320,10 +407,9 @@ round_up = G AND (R OR S OR result_LSB)
 In plain terms: round up if past the midpoint, OR at the exact midpoint with an
 odd result. At exact midpoints with an even result, keep the floor.
 
-### What the current implementation does
+### What the old implementation does
 
-The current encoder (`src/Bytes/Floating/Encode.elm`, line 117) checks only the
-guard bit:
+The old encoder checks only the guard bit:
 
 ```elm
 r =
@@ -335,13 +421,19 @@ r =
 This is **round-half-up**: round up whenever G=1, regardless of R, S, or the
 result's parity. This diverges from IEEE 754 at exact midpoints (G=1, R=0, S=0)
 where the floor mantissa is even -- IEEE 754 would keep the floor, but the
-current code rounds up.
+old code rounds up.
+
+### What the new implementation does
+
+The new (PureArithmetic) encoder uses Elm's `round` function, which maps to
+JavaScript's `Math.round`. This is also round-half-up: `Math.round(0.5) = 1`.
+So the rounding behavior is essentially the same as the old implementation for
+normal-range midpoints.
 
 ### How often does this matter?
 
 At midpoints between consecutive float16 values with the same exponent, the
-float32 representation has G=1, R=0, S=0 **systematically** (the midpoint is
-always exactly representable in float32). This means:
+error is systematic:
 
 - For each of the 30 normal exponents (1-30): 512 even-mantissa values exist
   (m = 0, 2, 4, ..., 1022), each with an affected midpoint.
@@ -358,7 +450,7 @@ deviation from the IEEE 754 standard.
 Four test cases are included that land exactly on midpoints between consecutive
 float16 values where the floor has an even mantissa:
 
-| Input | IEEE 754 correct | Current impl gives | Error |
+| Input | IEEE 754 correct | Old impl gives | Error |
 |---|---|---|---|
 | `1.00048828125` (midpoint of 1.0 and 1.0009765625) | `0x3C00` (m=0, even) | `0x3C01` (m=1, odd) | +1 ULP |
 | `2.0009765625` (midpoint of 2.0 and 2.001953125) | `0x4000` (m=0, even) | `0x4001` (m=1, odd) | +1 ULP |
@@ -368,16 +460,9 @@ float16 values where the floor has an even mantissa:
 These tests are in `bench/tests/VariantsTest.elm` under the
 `"IEEE 754 roundTiesToEven (midpoint, even floor)"` describe block.
 
-To reproduce:
-
-```sh
-cd bench
-elm-test
-```
-
 The tests verify:
 
-1. The current implementation (reference) produces `correctUint16 + 1`
+1. The old implementation produces `correctUint16 + 1`
    (rounds up -- incorrect per IEEE 754).
 2. EncodeByDecode produces `correctUint16` (keeps floor -- correct).
 3. SuccessiveBit produces `correctUint16` (keeps floor -- correct).
@@ -386,8 +471,8 @@ The tests verify:
 
 | Variant | Rounding method | At midpoint (even floor) | At midpoint (odd floor) | IEEE 754 compliant? |
 |---|---|---|---|---|
-| **Current** | Guard bit only | Rounds up (wrong) | Rounds up (correct) | No (round-half-up) |
-| **LookupTable** | Guard bit via table | Rounds up (wrong) | Rounds up (correct) | No (same as Current) |
+| **Old** | Guard bit only | Rounds up (wrong) | Rounds up (correct) | No (round-half-up) |
+| **LookupTable** | Guard bit via table | Rounds up (wrong) | Rounds up (correct) | No (same as Old) |
 | **Float64** | Guard bit (from float64) | Rounds up (wrong) | Rounds up (correct) | No (same logic) |
 | **PureArithmetic** | `round()` (JS Math.round) | Rounds up (wrong) | Rounds up (correct) | No (round-half-up) |
 | **ScaleFloor** | `round()` (JS Math.round) | Rounds up (wrong) | Rounds up (correct) | No (round-half-up) |
@@ -397,13 +482,13 @@ The tests verify:
 **No implementation achieves full IEEE 754 roundTiesToEven compliance.** They
 split into two groups:
 
-- **Round-half-up** (Current, LookupTable, Float64, PureArithmetic, ScaleFloor):
+- **Round-half-up** (Old, LookupTable, Float64, PureArithmetic, ScaleFloor):
   correct when the floor is odd, incorrect when even.
 - **Round-half-down** (EncodeByDecode, SuccessiveBit): correct when the floor is
   even, incorrect when odd.
 
 True roundTiesToEven would need to inspect the result mantissa's LSB at the
-tie-breaking step. For the bit-manipulation approaches (Current, LookupTable,
+tie-breaking step. For the bit-manipulation approaches (Old, LookupTable,
 Float64), this would mean checking the LSB of the truncated mantissa in addition
 to the guard bit. For the search-based approaches (EncodeByDecode, SuccessiveBit),
 this would mean replacing `<=` with a tie-breaking comparison that checks the
@@ -416,7 +501,7 @@ mantissa parity of both candidates.
 
 | Variant | Needs elm/bytes for encode | Needs elm/bytes for decode |
 |---|---|---|
-| Current | Yes (float32 reinterpret) | Yes (float32 reinterpret) |
+| Old | Yes (float32 reinterpret) | Yes (float32 reinterpret) |
 | EncodeByDecode | No (pure arithmetic) | No (pure arithmetic) |
 | PureArithmetic | No (pure arithmetic) | No (pure arithmetic) |
 | Float64 | Yes (float64 reinterpret) | Yes (float64 reinterpret) |
@@ -433,7 +518,7 @@ conversion functions could be used independently of the bytes library.
 
 | Approach | Used by |
 |---|---|
-| Bit reinterpretation via float32 | Current, LookupTable |
+| Bit reinterpretation via float32 | Old, LookupTable |
 | Bit reinterpretation via float64 | Float64 |
 | Pure arithmetic | EncodeByDecode, PureArithmetic, SuccessiveBit, ScaleFloor |
 
@@ -446,7 +531,7 @@ comparison in the tests.
 
 | Approach | Core operation | Iterations |
 |---|---|---|
-| Current | Bit extraction + case analysis | 1 (direct) |
+| Old | Bit extraction + case analysis | 1 (direct) |
 | EncodeByDecode | Binary search over decode | ~15 (log2 of search range) |
 | PureArithmetic | frexp loop + round | ~15-30 (exponent search) |
 | Float64 | Bit extraction from 64-bit repr | 1 (direct) |
@@ -465,9 +550,9 @@ bench/
   src/
     Bench.elm                               # elm-bench entry points
     Bytes/Floating/
-      Current.elm                           # Copy of current implementation
+      Old.elm                               # Copy of original implementation (v1.x)
       EncodeByDecode.elm                    # Binary search approach
-      PureArithmetic.elm                    # frexp decomposition
+      PureArithmetic.elm                    # frexp decomposition (= current default)
       Float64.elm                           # float64 bit reinterpretation
       SuccessiveBit.elm                     # ADC-style bit construction
       ScaleFloor.elm                        # Scale to integer range

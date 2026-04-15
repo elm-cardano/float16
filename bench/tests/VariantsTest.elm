@@ -8,7 +8,7 @@ import Bitwise exposing (and, shiftRightBy)
 import Bytes exposing (Endianness(..))
 import Bytes.Decode as D
 import Bytes.Encode as E
-import Bytes.Floating.Current as Current
+import Bytes.Floating.Old as Old
 import Bytes.Floating.Decode as OrigDecode
 import Bytes.Floating.Encode as OrigEncode
 import Bytes.Floating.EncodeByDecode as EncodeByDecode
@@ -165,7 +165,7 @@ ieee754MidpointCases =
 suite : Test
 suite =
     describe "Variant equivalence with original"
-        [ variantSuite "Current" Current.encode Current.decode
+        [ variantSuite "Old" Old.encode Old.decode
         , variantSuite "EncodeByDecode" EncodeByDecode.encode EncodeByDecode.decode
         , variantSuite "PureArithmetic" PureArithmetic.encode PureArithmetic.decode
         , variantSuite "Float64" Float64.encode Float64.decode
@@ -186,9 +186,9 @@ ieee754Suite =
         (List.map
             (\( label, input, correctUint16 ) ->
                 describe label
-                    [ test "current impl rounds UP (incorrect per IEEE 754)" <|
+                    [ test "old impl rounds UP (incorrect per IEEE 754)" <|
                         \_ ->
-                            referenceEncode input
+                            Old.encode input
                                 |> Expect.equal (correctUint16 + 1)
                     , test "EncodeByDecode rounds DOWN (correct)" <|
                         \_ ->
