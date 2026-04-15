@@ -1,0 +1,26 @@
+{
+  "private": true,
+  "devDependencies": {
+    "elm": "0.19.1-6",
+    "elm-test": "0.19.1-revision17",
+    "elm-format": "0.8.8",
+    "elm-review": "2.13.5"
+  },
+  "scripts": {
+    "test": "elm-test",
+    "review": "elm-review",
+    "test:bench": "cd bench && elm-test",
+    "format": "elm-format --yes src/ tests/ bench/src/ bench/tests/",
+    "format:check": "elm-format --validate src/ tests/ bench/src/ bench/tests/",
+    "bench:build": "cd bench && elm make src/Bench.elm --output=/dev/null"
+  },
+  "engines": {
+    "pnpm": ">=10"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "elm",
+      "elm-format"
+    ]
+  }
+}
