@@ -2,17 +2,16 @@
 
 ---
 
-[![](https://img.shields.io/elm-package/v/elm-toulouse/float16.svg?style=for-the-badge)](https://package.elm-lang.org/packages/elm-toulouse/float16/latest/)
-[![](https://img.shields.io/travis/elm-toulouse/float16.svg?style=for-the-badge&label=%F0%9F%94%A8%20Build)](https://travis-ci.org/elm-toulouse/float16/builds)
-[![](https://img.shields.io/codecov/c/gh/elm-toulouse/float16.svg?color=e84393&label=%E2%98%82%EF%B8%8F%20Coverage&style=for-the-badge)](https://codecov.io/gh/elm-toulouse/float16)
-[![](https://img.shields.io/github/license/elm-toulouse/float16.svg?style=for-the-badge&label=%20%F0%9F%93%84%20License)](https://github.com/elm-toulouse/float16/blob/master/LICENSE)
+[![](https://img.shields.io/elm-package/v/elm-cardano/float16.svg?style=for-the-badge)](https://package.elm-lang.org/packages/elm-cardano/float16/latest/)
+[![](https://img.shields.io/github/actions/workflow/status/elm-cardano/float16/ci.yml?style=for-the-badge&label=%F0%9F%94%A8%20Build)](https://github.com/elm-cardano/float16/actions)
+[![](https://img.shields.io/github/license/elm-cardano/float16.svg?style=for-the-badge&label=%20%F0%9F%93%84%20License)](https://github.com/elm-cardano/float16/blob/master/LICENSE)
 
 ## Getting Started
 
 ### Installation
 
 ```
-elm install elm-toulouse/float16
+elm install elm-cardano/float16
 ```
 
 ### Usage
@@ -112,8 +111,8 @@ The decoder reads 2 bytes as a `uint16`, extracts sign/exponent/mantissa by bit 
 
 ### Performance
 
-The v2.0 rewrite replaced the v1.x bit-reinterpretation approach (roundtrip through `float32` bytes) with pure arithmetic, yielding **2x faster encode** and **5x faster decode**. The `bench/` directory contains six alternative implementations that were evaluated; see [`bench/REPORT.md`](https://github.com/elm-toulouse/float16/blob/master/bench/REPORT.md) for the full comparison.
+The v2.0 rewrite replaced the v1.x bit-reinterpretation approach (roundtrip through `float32` bytes) with pure arithmetic, yielding **2x faster encode** and **5x faster decode**. The `bench/` directory contains six alternative implementations that were evaluated; see [`bench/REPORT.md`](https://github.com/elm-cardano/float16/blob/master/bench/REPORT.md) for the full comparison.
 
 ## Changelog
 
-[CHANGELOG.md](https://github.com/elm-toulouse/float16/blob/master/CHANGELOG.md)
+[CHANGELOG.md](https://github.com/elm-cardano/float16/blob/master/CHANGELOG.md)

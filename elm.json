@@ -1,9 +1,9 @@
 {
     "type": "package",
-    "name": "elm-toulouse/float16",
+    "name": "elm-cardano/float16",
     "summary": "Provide extra binary Encoder and Decoder to and from float16",
     "license": "MIT",
-    "version": "1.0.1",
+    "version": "1.0.0",
     "exposed-modules": [
         "Bytes.Floating.Decode",
         "Bytes.Floating.Encode"
