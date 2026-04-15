@@ -5,6 +5,7 @@ encode by searching for the uint16 whose decoded value is closest.
 
 Only the decode function needs to be correct; encode correctness
 follows from the search.
+
 -}
 
 import Bitwise exposing (and, or, shiftLeftBy, shiftRightBy)
@@ -27,7 +28,7 @@ encode f =
             0x8000
 
         else
-            0x0000
+            0x00
 
     else
         let
@@ -117,7 +118,7 @@ decodeMagnitude bits =
             0.0
 
         else
-            toFloat m * pow2 (-24)
+            toFloat m * pow2 -24
 
     else if e == 31 then
         1.0 / 0.0
@@ -159,4 +160,4 @@ pow2 n =
         toFloat (shiftLeftBy n 1)
 
     else
-        1.0 / toFloat (shiftLeftBy (-n) 1)
+        1.0 / toFloat (shiftLeftBy -n 1)

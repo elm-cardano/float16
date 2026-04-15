@@ -158,10 +158,13 @@ encode f =
 At exact midpoints (fractional part = 0.5), the result is rounded to the
 nearest even integer. Away from midpoints, behaves like normal rounding.
 
-    roundEven 0.5 == 0  -- tie: 0 is even, keep it
-    roundEven 1.5 == 2  -- tie: 1 is odd, round up
-    roundEven 2.5 == 2  -- tie: 2 is even, keep it
-    roundEven 0.7 == 1  -- not a tie, round to nearest
+    roundEven 0.5 == 0 -- tie: 0 is even, keep it
+
+    roundEven 1.5 == 2 -- tie: 1 is odd, round up
+
+    roundEven 2.5 == 2 -- tie: 2 is even, keep it
+
+    roundEven 0.7 == 1 -- not a tie, round to nearest
 
 See <https://en.wikipedia.org/wiki/IEEE_754#Rounding_rules>
 
@@ -182,12 +185,14 @@ roundEven x =
         n
 
     else
-        -- Exact midpoint: round to even
-        if modBy 2 n == 0 then
-            n
+    -- Exact midpoint: round to even
+    if
+        modBy 2 n == 0
+    then
+        n
 
-        else
-            n + 1
+    else
+        n + 1
 
 
 {-| Decompose a positive float into (mantissa, exponent) where

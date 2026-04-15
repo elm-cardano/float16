@@ -23,13 +23,15 @@ module Bench exposing
 
 {-| Benchmark functions for float16 encode/decode variants.
 
-    elm-bench -f Bench.old_encode -f Bench.encodeByDecode_encode "()"
-    elm-bench -f Bench.old_decode -f Bench.encodeByDecode_decode "()"
+    elm - bench -f Bench.old_encode -f Bench.encodeByDecode_encode "()"
+
+    elm - bench -f Bench.old_decode -f Bench.encodeByDecode_decode "()"
 
 Full pipeline (Float -> Encoder -> Bytes / Bytes -> Decoder -> Float):
 
-    elm-bench -f Bench.old_full_encode -f Bench.new_full_encode "()"
-    elm-bench -f Bench.old_full_decode -f Bench.new_full_decode "()"
+    elm - bench -f Bench.old_full_encode -f Bench.new_full_encode "()"
+
+    elm - bench -f Bench.old_full_decode -f Bench.new_full_decode "()"
 
 -}
 

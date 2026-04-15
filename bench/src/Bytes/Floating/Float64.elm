@@ -32,7 +32,7 @@ encode f =
                 high |> shiftRightBy 16 |> and 0x8000
 
             e64 =
-                high |> shiftRightBy 20 |> and 0x7FF
+                high |> shiftRightBy 20 |> and 0x07FF
 
             -- Top 10 bits of 52-bit mantissa
             m10 =
@@ -46,7 +46,7 @@ encode f =
             -- Float64 subnormal (way too small for float16)
             s
 
-        else if e64 == 0x7FF then
+        else if e64 == 0x07FF then
             -- Infinity (NaN already handled above)
             s |> or 0x7C00
 
@@ -118,7 +118,7 @@ decode bits =
         fromFloat64Bits
             { high =
                 (s |> shiftLeftBy 31)
-                    |> or (0x7FF |> shiftLeftBy 20)
+                    |> or (0x07FF |> shiftLeftBy 20)
                     |> or (m |> shiftLeftBy 10)
             , low = 0
             }

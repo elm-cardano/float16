@@ -6,10 +6,12 @@ Four tables indexed by the upper 9 bits of the float32 representation
 in the encoder. The decoder reuses the current bit-reinterpretation approach.
 
 Tables:
-  - baseTable:       float16 sign + exponent bits
-  - shiftTable:      mantissa right-shift amount
-  - orMaskTable:     implicit-1 mask for subnormals
+
+  - baseTable: float16 sign + exponent bits
+  - shiftTable: mantissa right-shift amount
+  - orMaskTable: implicit-1 mask for subnormals
   - roundShiftTable: guard bit position for rounding
+
 -}
 
 import Array exposing (Array)

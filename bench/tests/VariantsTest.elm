@@ -8,12 +8,12 @@ import Bitwise exposing (and, shiftRightBy)
 import Bytes exposing (Endianness(..))
 import Bytes.Decode as D
 import Bytes.Encode as E
-import Bytes.Floating.Old as Old
 import Bytes.Floating.Decode as OrigDecode
 import Bytes.Floating.Encode as OrigEncode
 import Bytes.Floating.EncodeByDecode as EncodeByDecode
 import Bytes.Floating.Float64 as Float64
 import Bytes.Floating.LookupTable as LookupTable
+import Bytes.Floating.Old as Old
 import Bytes.Floating.PureArithmetic as PureArithmetic
 import Bytes.Floating.ScaleFloor as ScaleFloor
 import Bytes.Floating.SuccessiveBit as SuccessiveBit
@@ -111,8 +111,8 @@ testEncodeValues =
 
 testDecodeValues : List ( String, Int )
 testDecodeValues =
-    [ ( "0x0000", 0x0000 )
-    , ( "0x0001", 0x0001 )
+    [ ( "0x0000", 0x00 )
+    , ( "0x0001", 0x01 )
     , ( "0x0400", 0x0400 )
     , ( "0x3BFF", 0x3BFF )
     , ( "0x3C00", 0x3C00 )
@@ -141,19 +141,23 @@ ieee754MidpointCases : List ( String, Float, Int )
 ieee754MidpointCases =
     [ ( "midpoint(1.0, 1.0009765625) = 1.00048828125"
       , 1.00048828125
-      , 0x3C00 -- floor: m=0 (even), IEEE 754 keeps it
+      , 0x3C00
+        -- floor: m=0 (even), IEEE 754 keeps it
       )
     , ( "midpoint(2.0, 2.001953125) = 2.0009765625"
       , 2.0009765625
-      , 0x4000 -- floor: m=0 (even)
+      , 0x4000
+        -- floor: m=0 (even)
       )
     , ( "midpoint(1.001953125, 1.0029296875) = 1.00244140625"
       , 1.00244140625
-      , 0x3C02 -- floor: m=2 (even)
+      , 0x3C02
+        -- floor: m=2 (even)
       )
     , ( "midpoint(0, 5.96e-8) = 2.98e-8 (subnormal)"
-      , 2.9802322387695312e-8
-      , 0x0000 -- floor: m=0 (even)
+      , 2.9802322387695313e-8
+      , 0x00
+        -- floor: m=0 (even)
       )
     ]
 

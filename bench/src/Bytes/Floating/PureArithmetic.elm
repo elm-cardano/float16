@@ -25,7 +25,7 @@ encode f =
             0x8000
 
         else
-            0x0000
+            0x00
 
     else
         let
@@ -85,7 +85,7 @@ encode f =
 
 
 {-| Decompose a positive float into (mantissa, exponent) where
-mantissa is in [1.0, 2.0) and value = mantissa * 2^exponent.
+mantissa is in [1.0, 2.0) and value = mantissa \* 2^exponent.
 Equivalent to C's frexp but with mantissa in [1,2) instead of [0.5,1).
 -}
 frexp : Float -> ( Float, Int )
@@ -127,7 +127,7 @@ decode bits =
 
         else
             -- Subnormal: value = m/1024 * 2^(-14) = m * 2^(-24)
-            s * toFloat m * pow2 (-24)
+            s * toFloat m * pow2 -24
 
     else if e == 31 then
         if m == 0 then
@@ -147,4 +147,4 @@ pow2 n =
         toFloat (shiftLeftBy n 1)
 
     else
-        1.0 / toFloat (shiftLeftBy (-n) 1)
+        1.0 / toFloat (shiftLeftBy -n 1)

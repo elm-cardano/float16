@@ -34,8 +34,8 @@ suite =
         , expect "midpoint(1.0, 1.0009765625)" (float16 BE 1.00048828125) [ 0x3C, 0x00 ]
         , expect "midpoint(2.0, 2.001953125)" (float16 BE 2.0009765625) [ 0x40, 0x00 ]
         , expect "midpoint(1.001953125, 1.0029296875)" (float16 BE 1.00244140625) [ 0x3C, 0x02 ]
-        , expect "midpoint(0, smallest subnormal)" (float16 BE 2.9802322387695312e-8) [ 0x00, 0x00 ]
-        , expect "midpoint(1.0009765625, 1.001953125)" (float16 BE 1.0014648437500) [ 0x3C, 0x02 ]
+        , expect "midpoint(0, smallest subnormal)" (float16 BE 2.9802322387695313e-8) [ 0x00, 0x00 ]
+        , expect "midpoint(1.0009765625, 1.001953125)" (float16 BE 1.00146484375) [ 0x3C, 0x02 ]
         ]
 
 

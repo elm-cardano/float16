@@ -4,9 +4,10 @@ module Bytes.Floating.ScaleFloor exposing (decode, encode)
 so that the mantissa bits land in the integer part, then use round
 to extract them.
 
-Key insight: if value = 1.mmmmmmmmmm * 2^e, then
-value * 2^(10-e) = 1mmmmmmmmmm.0 — an integer whose lower 10 bits
+Key insight: if value = 1.mmmmmmmmmm \* 2^e, then
+value \* 2^(10-e) = 1mmmmmmmmmm.0 — an integer whose lower 10 bits
 are the mantissa.
+
 -}
 
 import Bitwise exposing (and, shiftLeftBy, shiftRightBy)
@@ -29,7 +30,7 @@ encode f =
             0x8000
 
         else
-            0x0000
+            0x00
 
     else
         let
@@ -135,7 +136,7 @@ decode bits =
             s * 0.0
 
         else
-            s * toFloat m * pow2 (-24)
+            s * toFloat m * pow2 -24
 
     else if e == 31 then
         if m == 0 then
@@ -154,4 +155,4 @@ pow2 n =
         toFloat (shiftLeftBy n 1)
 
     else
-        1.0 / toFloat (shiftLeftBy (-n) 1)
+        1.0 / toFloat (shiftLeftBy -n 1)
