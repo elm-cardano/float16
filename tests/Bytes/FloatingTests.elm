@@ -1,6 +1,6 @@
 module Bytes.FloatingTests exposing (suite)
 
-import Bytes exposing (Bytes, Endianness(..), width)
+import Bytes exposing (Endianness(..))
 import Bytes.Decode as D
 import Bytes.Encode as E
 import Bytes.Floating.Decode as D
@@ -20,11 +20,9 @@ suite =
           <|
             \i ->
                 let
+                    f : Maybe Float
                     f =
                         D.decode (D.float16 BE) <| E.encode (E.unsignedInt16 BE i)
-
-                    err =
-                        Expect.fail "Couldn't decode floating number from 16 bytes ?"
                 in
                 f
                     |> Maybe.map (E.float16 BE >> E.encode)

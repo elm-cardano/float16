@@ -45,4 +45,4 @@ decode =
 
 ## Changelog
 
-[CHANGELOG.md](CHANGELOG.md)
+[CHANGELOG.md](https://github.com/elm-toulouse/float16/blob/master/CHANGELOG.md)

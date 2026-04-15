@@ -24,7 +24,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.elm
-          key: elm-${{ hashFiles('elm.json') }}
+          key: elm-${{ hashFiles('elm.json', 'review/elm.json') }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -37,6 +37,9 @@ jobs:
 
       - name: Check formatting
         run: pnpm format:check
+
+      - name: Run elm-review
+        run: pnpm review
 
       - name: Build benchmarks
         run: pnpm bench:build

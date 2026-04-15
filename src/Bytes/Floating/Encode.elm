@@ -91,6 +91,7 @@ encode f =
 
     else
         let
+            sign : Int
             sign =
                 if f < 0 then
                     0x8000
@@ -98,6 +99,7 @@ encode f =
                 else
                     0
 
+            af : Float
             af =
                 abs f
 
@@ -106,6 +108,7 @@ encode f =
                 frexp af
 
             -- Float16 exponent is biased by 15: stored = actual + 15
+            biased : Int
             biased =
                 exponent + 15
         in
@@ -118,6 +121,7 @@ encode f =
             -- The leading 1 is implicit, so we only store the fractional part.
             -- Quantize to 10 bits: m = round((mantissa - 1.0) * 1024)
             let
+                m : Int
                 m =
                     roundEven ((mantissa - 1.0) * 1024.0)
             in
@@ -137,6 +141,7 @@ encode f =
             -- Subnormal: value = m/1024 * 2^(-14) = m * 2^(-24)
             -- No implicit leading 1. Solve for m: m = round(af * 2^24)
             let
+                m : Int
                 m =
                     roundEven (af * pow2 24)
             in
@@ -172,9 +177,11 @@ See <https://en.wikipedia.org/wiki/IEEE_754#Rounding_rules>
 roundEven : Float -> Int
 roundEven x =
     let
+        n : Int
         n =
             floor x
 
+        frac : Float
         frac =
             x - toFloat n
     in

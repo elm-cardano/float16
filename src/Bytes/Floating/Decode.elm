@@ -65,6 +65,7 @@ decode : Int -> Float
 decode bits =
     let
         -- Sign: bit 15. Stored as a multiplier: +1.0 or -1.0
+        s : Float
         s =
             if and bits 0x8000 /= 0 then
                 -1.0
@@ -74,10 +75,12 @@ decode bits =
 
         -- Exponent: bits 14..10 (5 bits), biased by 15
         -- Raw range [0..31], actual exponent = e - 15, so [-15..16]
+        e : Int
         e =
             bits |> shiftRightBy 10 |> and 0x1F
 
         -- Mantissa: bits 9..0 (10 bits), raw integer in [0..1023]
+        m : Int
         m =
             bits |> and 0x03FF
     in

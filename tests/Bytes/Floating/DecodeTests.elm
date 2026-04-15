@@ -58,4 +58,4 @@ expect decoder output ( readable, input ) =
 -}
 hex : List Int -> ( List Int, Bytes )
 hex xs =
-    ( xs, xs |> List.map E.unsignedInt8 >> E.sequence >> E.encode )
+    ( xs, xs |> List.map E.unsignedInt8 |> E.sequence |> E.encode )
